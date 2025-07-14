@@ -1,4 +1,3 @@
-# dbt Cloud Configuration
 variable "dbtcloud_account_id" {
   type        = string
   description = "dbt Cloud Account ID"
@@ -16,17 +15,9 @@ variable "dbtcloud_host_url" {
   default     = "https://cloud.getdbt.com"
 }
 
-# Team Configuration
-variable "team_name" {
-  type        = string
-  description = "Name of the team"
-  default     = "marketing-team"
-}
-
-# Project and Environment (from platform team)
 variable "project_id" {
   type        = string
-  description = "dbt Cloud Project ID for Marketing Analytics (from platform team output)"
+  description = "dbt Cloud Project ID (from central infrastructure)"
 }
 
 variable "environment_id" {
@@ -34,20 +25,28 @@ variable "environment_id" {
   description = "dbt Cloud Environment ID to deploy jobs to"
 }
 
-# Jobs Configuration
+variable "team_name" {
+  type        = string
+  description = "Name of your team"
+  default     = "marketing-team"
+}
+
 variable "jobs" {
   type = list(object({
-    name          = string
-    description   = string
-    execute_steps = list(string)
-    schedule_type = string
-    schedule_hours = optional(list(number), [])
-    schedule_days  = optional(list(number), [])
-    job_type      = string
-    threads       = optional(number, 4)
-    generate_docs = optional(bool, true)
-    run_generate_sources = optional(bool, false)
-    target_name   = optional(string, null)
+    name                = string
+    description         = optional(string, "")
+    execute_steps       = list(string)
+    triggers_on_draft_pr = optional(bool, false)
+    schedule_type       = optional(string, "every_day")
+    schedule_hours      = optional(list(number), [])
+    schedule_days       = optional(list(number), [])
+    schedule_date       = optional(string, null)
+    cron_schedule       = optional(string, null)
+    job_type           = optional(string, "daily")
+    threads            = optional(number, 4)
+    target_name        = optional(string, null)
+    generate_docs      = optional(bool, false)
   }))
-  description = "List of Marketing Analytics Team dbt jobs to create"
+  description = "List of dbt Cloud jobs to create for this team"
+  default     = []
 }

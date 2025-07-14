@@ -84,7 +84,7 @@ def main():
                 if category_prefix:
                     terraform_name = f"{category_prefix}{terraform_name}"
             
-            import_command = f"terraform import module.team_jobs.dbtcloud_job.{terraform_name} {job_id}"
+            import_command = f"terraform import dbtcloud_job.team_jobs[\\\"{terraform_name}\\\"] {job_id}"
             import_commands.append(import_command)
         
         # Save commands to file

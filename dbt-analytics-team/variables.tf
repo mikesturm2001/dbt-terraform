@@ -40,7 +40,12 @@ variable "jobs" {
     schedule_type       = optional(string, "every_day")
     schedule_hours      = optional(list(number), [])
     schedule_days       = optional(list(number), [])
+    schedule_date       = optional(string, null)
+    cron_schedule       = optional(string, null)
     job_type           = optional(string, "daily")
+    threads            = optional(number, 4)
+    target_name        = optional(string, null)
+    generate_docs      = optional(bool, false)
   }))
   description = "List of dbt Cloud jobs to create for this team"
   default     = []
