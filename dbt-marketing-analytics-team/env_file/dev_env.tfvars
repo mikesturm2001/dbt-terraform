@@ -7,10 +7,6 @@ dbtcloud_host_url   = "https://cloud.getdbt.com"
 # Marketing project ID from dbt-cloud-admin output: marketing_project.project_id
 project_id = "102"  # Marketing project ID
 
-# Shared terraform-dev environment for all branch deployments
-# From dbt-cloud-admin output: shared_terraform_dev_environment.environment_id
-environment_id = "999"  # Shared dev environment ID
-
 team_name = "marketing-team"
 
 # Marketing Analytics Jobs Configuration
@@ -18,8 +14,9 @@ team_name = "marketing-team"
 jobs = [
   # === MARKETING ATTRIBUTION ===
   {
-    name          = "attribution-daily-refresh"
-    description   = "Daily refresh of marketing attribution models"
+    name           = "attribution-daily-refresh"
+    description    = "Daily refresh of marketing attribution models"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt deps",
       "dbt run --select tag:attribution",
@@ -34,8 +31,9 @@ jobs = [
   
   # === CAMPAIGN PERFORMANCE ===
   {
-    name          = "campaign-performance"
-    description   = "Campaign performance tracking and reporting"
+    name           = "campaign-performance"
+    description    = "Campaign performance tracking and reporting"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt run --select tag:campaigns",
       "dbt test --select tag:campaigns",
@@ -50,8 +48,9 @@ jobs = [
   
   # === CUSTOMER ACQUISITION ===
   {
-    name          = "customer-acquisition-funnel"
-    description   = "Customer acquisition funnel analysis"
+    name           = "customer-acquisition-funnel"
+    description    = "Customer acquisition funnel analysis"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt run --select tag:acquisition",
       "dbt test --select tag:acquisition",
@@ -65,8 +64,9 @@ jobs = [
   
   # === AD PLATFORM INTEGRATION ===
   {
-    name          = "ad-platform-sync"
-    description   = "Sync data from Facebook, Google, LinkedIn ad platforms"
+    name           = "ad-platform-sync"
+    description    = "Sync data from Facebook, Google, LinkedIn ad platforms"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt run --select tag:ad_platforms",
       "dbt test --select tag:ad_platforms"
@@ -80,8 +80,9 @@ jobs = [
   
   # === EMAIL & MARKETING AUTOMATION ===
   {
-    name          = "email-marketing-metrics"
-    description   = "Email marketing and automation performance metrics"
+    name           = "email-marketing-metrics"
+    description    = "Email marketing and automation performance metrics"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt run --select tag:email_marketing",
       "dbt test --select tag:email_marketing",
@@ -95,8 +96,9 @@ jobs = [
   
   # === CUSTOMER LIFETIME VALUE ===
   {
-    name          = "customer-ltv-modeling"
-    description   = "Customer lifetime value modeling and segmentation"
+    name           = "customer-ltv-modeling"
+    description    = "Customer lifetime value modeling and segmentation"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt run --select tag:ltv_models",
       "dbt test --select tag:ltv_models",
@@ -111,8 +113,9 @@ jobs = [
   
   # === MARKETING DATA QUALITY ===
   {
-    name          = "marketing-data-quality"
-    description   = "Marketing data quality validation and monitoring"
+    name           = "marketing-data-quality"
+    description    = "Marketing data quality validation and monitoring"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt test --select tag:marketing_quality",
       "dbt test --select tag:attribution_tests"
@@ -125,8 +128,9 @@ jobs = [
   
   # === DEVELOPMENT SPECIFIC ===
   {
-    name          = "marketing-model-testing"
-    description   = "On-demand testing for marketing model development"
+    name           = "marketing-model-testing"
+    description    = "On-demand testing for marketing model development"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt deps",
       "dbt compile",
@@ -140,8 +144,9 @@ jobs = [
   
   # === EXECUTIVE REPORTING ===
   {
-    name          = "marketing-executive-dashboard"
-    description   = "Executive marketing dashboard and KPI refresh"
+    name           = "marketing-executive-dashboard"
+    description    = "Executive marketing dashboard and KPI refresh"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt run --select tag:executive_reporting",
       "dbt test --select tag:executive_reporting",

@@ -26,9 +26,8 @@ jobs = [
     job_type       = "daily"
   },
   {
-    name           = "core-incremental-sync"
-    description    = "Incremental updates for real-time data - dev environment"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "core-incremental-sync"
+    description   = "Incremental updates for real-time data - dev environment"
     execute_steps = [
       "dbt run --select tag:incremental --defer",
       "dbt test --select tag:incremental"
@@ -41,9 +40,8 @@ jobs = [
 
   # === DATA MARTS ===
   {
-    name           = "customer-analytics"
-    description    = "Customer analytics data mart refresh - dev environment"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "customer-analytics"
+    description   = "Customer analytics data mart refresh - dev environment"
     execute_steps = [
       "dbt run --select tag:customer_analytics --defer",
       "dbt test --select tag:customer_analytics"
@@ -53,9 +51,8 @@ jobs = [
     job_type       = "daily"
   },
   {
-    name           = "revenue-reporting"
-    description    = "Revenue and financial reporting data mart - dev environment"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "revenue-reporting"
+    description   = "Revenue and financial reporting data mart - dev environment"
     execute_steps = [
       "dbt run --select tag:revenue --defer",
       "dbt test --select tag:revenue"
@@ -67,9 +64,8 @@ jobs = [
 
   # === DATA QUALITY ===
   {
-    name           = "critical-data-tests"
-    description    = "Critical data quality validation - dev environment"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "critical-data-tests"
+    description   = "Critical data quality validation - dev environment"
     execute_steps = [
       "dbt test --select tag:critical"
     ]
@@ -78,9 +74,8 @@ jobs = [
     job_type       = "daily"
   },
   {
-    name           = "data-monitoring"
-    description    = "Data monitoring and profiling - dev environment"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "data-monitoring"
+    description   = "Data monitoring and profiling - dev environment"
     execute_steps = [
       "dbt test --select tag:monitoring",
       "python data_profiling.py --env=dev"
@@ -92,9 +87,8 @@ jobs = [
 
   # === OPERATIONAL ===
   {
-    name           = "daily-snapshots"
-    description    = "Historical data snapshots - dev environment"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "daily-snapshots"
+    description   = "Historical data snapshots - dev environment"
     execute_steps = [
       "dbt snapshot --select tag:daily_snapshots"
     ]
@@ -105,9 +99,8 @@ jobs = [
 
   # === DEVELOPMENT SPECIFIC ===
   {
-    name           = "feature-testing"
-    description    = "On-demand testing for feature development"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "feature-testing"
+    description   = "On-demand testing for feature development"
     execute_steps = [
       "dbt deps",
       "dbt compile",
@@ -118,9 +111,8 @@ jobs = [
     job_type       = "on-demand"
   },
   {
-    name           = "data-exploration"
-    description    = "Data exploration and profiling"
-    environment_id = "999"  # shared terraform-dev environment
+    name          = "data-exploration"
+    description   = "Data exploration and profiling"
     execute_steps = [
       "dbt deps",
       "dbt run --select tag:exploration",
