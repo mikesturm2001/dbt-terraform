@@ -6,10 +6,6 @@ dbtcloud_host_url   = "https://dev.getdbt.com"
 # These values should come from the central infrastructure outputs
 project_id = "101"  # From central infrastructure output
 
-# Target dbt Cloud Environment (where jobs will be deployed)
-# All branches deploy to the shared terraform-dev environment
-environment_id = "201"  # terraform-dev environment ID (shared by all teams/branches)
-
 team_name = "analytics-team"
 
 # Development Jobs Configuration
@@ -17,8 +13,9 @@ team_name = "analytics-team"
 jobs = [
   # === CORE DATA MODELS ===
   {
-    name          = "core-daily-refresh"
-    description   = "Daily refresh of core foundational models - dev environment"
+    name           = "core-daily-refresh"
+    description    = "Daily refresh of core foundational models - dev environment"
+    environment_id = "999"  # shared terraform-dev environment
     execute_steps = [
       "dbt deps",
       "dbt run --select tag:core --defer",

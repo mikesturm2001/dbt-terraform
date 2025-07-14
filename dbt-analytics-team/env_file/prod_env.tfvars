@@ -6,9 +6,6 @@ dbtcloud_host_url   = "https://prod.getdbt.com"
 # These values should come from the central infrastructure outputs
 project_id = "101"  # From central infrastructure output
 
-# Target dbt Cloud Environment (where jobs will be deployed)
-environment_id = "302"  # terraform-prod environment ID
-
 team_name = "analytics-team"
 
 # Production Jobs Configuration
@@ -16,8 +13,9 @@ team_name = "analytics-team"
 jobs = [
   # === CORE DATA MODELS ===
   {
-    name          = "core-daily-refresh"
-    description   = "Production daily refresh of core models - business critical"
+    name           = "core-daily-refresh"
+    description    = "Production daily refresh of core models - business critical"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt deps",
       "dbt seed",
@@ -33,8 +31,9 @@ jobs = [
 
   # === DATA MARTS ===
   {
-    name          = "customer-analytics"
-    description   = "Production customer analytics mart - business critical"
+    name           = "customer-analytics"
+    description    = "Production customer analytics mart - business critical"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt run --select tag:customer_analytics",
       "dbt test --select tag:customer_analytics",
@@ -46,8 +45,9 @@ jobs = [
     job_type       = "daily"
   },
   {
-    name          = "revenue-reporting"
-    description   = "Production revenue reporting - finance critical"
+    name           = "revenue-reporting"
+    description    = "Production revenue reporting - finance critical"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt run --select tag:revenue",
       "dbt test --select tag:revenue",
@@ -61,8 +61,9 @@ jobs = [
 
   # === DATA QUALITY ===
   {
-    name          = "critical-data-tests"
-    description   = "Production critical data quality tests with alerting"
+    name           = "critical-data-tests"
+    description    = "Production critical data quality tests with alerting"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt test --select tag:critical",
       "dbt test --select tag:data_quality",
@@ -74,8 +75,9 @@ jobs = [
     job_type       = "daily"
   },
   {
-    name          = "data-monitoring"
-    description   = "Production data monitoring with comprehensive reporting"
+    name           = "data-monitoring"
+    description    = "Production data monitoring with comprehensive reporting"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt test --select tag:monitoring",
       "python data_profiling.py --env=prod",
@@ -89,8 +91,9 @@ jobs = [
 
   # === OPERATIONAL ===
   {
-    name          = "daily-snapshots"
-    description   = "Production snapshot refresh - historical data preservation"
+    name           = "daily-snapshots"
+    description    = "Production snapshot refresh - historical data preservation"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt snapshot --select tag:daily_snapshots",
       "dbt test --select tag:snapshot_tests",
@@ -103,8 +106,9 @@ jobs = [
 
   # === PRODUCTION SPECIFIC ===
   {
-    name          = "business-reporting"
-    description   = "Critical business reporting for stakeholders"
+    name           = "business-reporting"
+    description    = "Critical business reporting for stakeholders"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt run --select tag:business_reports",
       "dbt test --select tag:business_reports",
@@ -116,8 +120,9 @@ jobs = [
     job_type       = "daily"
   },
   {
-    name          = "compliance-validation"
-    description   = "Regulatory compliance and audit trail validation"
+    name           = "compliance-validation"
+    description    = "Regulatory compliance and audit trail validation"
+    environment_id = "301"  # analytics-prod environment
     execute_steps = [
       "dbt test --select tag:compliance",
       "dbt test --select tag:audit_trail",
@@ -129,27 +134,32 @@ jobs = [
     job_type       = "daily"
   },
 
-  # === JOBS THAT WILL BE SKIPPED ===
-  # These jobs will be SKIPPED because prod only allows daily jobs
+  # === EXAMPLE: MULTIPLE ENVIRONMENTS IN ONE FILE ===
+  # Jobs that run in staging environment
   {
-    name          = "hourly-updates"
-    description   = "This job will be SKIPPED - prod only allows daily jobs"
+    name           = "staging-validation"
+    description    = "Staging environment validation tests"
+    environment_id = "202"  # analytics-staging environment
     execute_steps = [
-      "dbt run --select tag:incremental"
-    ]
-    schedule_type  = "custom"
-    schedule_hours = [6, 12, 18]
-    schedule_days  = [1, 2, 3, 4, 5, 6, 7]
-    job_type       = "hourly"  # Will be filtered out!
-  },
-  {
-    name          = "manual-intervention"
-    description   = "This job will be SKIPPED - prod doesn't allow on-demand jobs"
-    execute_steps = [
-      "dbt run --full-refresh"
+      "dbt run --select tag:staging_tests",
+      "dbt test --select tag:staging_tests"
     ]
     schedule_type  = "every_day"
-    schedule_hours = []
-    job_type       = "on-demand"  # Will be filtered out!
+    schedule_hours = [10]  # 10 AM - after prod jobs
+    job_type       = "daily"
+  },
+
+  # Example of a job that could run in a different prod environment
+  {
+    name           = "special-reporting"
+    description    = "Special reporting that runs in dedicated environment"
+    environment_id = "302"  # analytics-prod-special environment (if exists)
+    execute_steps = [
+      "dbt run --select tag:special_reports",
+      "dbt test --select tag:special_reports"
+    ]
+    schedule_type  = "every_day"
+    schedule_hours = [14]  # 2 PM
+    job_type       = "daily"
   }
 ]

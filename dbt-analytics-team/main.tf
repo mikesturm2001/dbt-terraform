@@ -12,7 +12,7 @@ resource "dbtcloud_job" "team_jobs" {
 
   account_id    = var.dbtcloud_account_id
   project_id    = var.project_id
-  environment_id = var.environment_id
+  environment_id = each.value.environment_id
   
   name         = "${var.team_name}-${each.value.name}"
   description  = each.value.description

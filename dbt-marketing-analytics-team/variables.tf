@@ -20,11 +20,6 @@ variable "project_id" {
   description = "dbt Cloud Project ID (from central infrastructure)"
 }
 
-variable "environment_id" {
-  type        = string
-  description = "dbt Cloud Environment ID to deploy jobs to"
-}
-
 variable "team_name" {
   type        = string
   description = "Name of your team"
@@ -35,6 +30,7 @@ variable "jobs" {
   type = list(object({
     name                = string
     description         = optional(string, "")
+    environment_id      = string
     execute_steps       = list(string)
     triggers_on_draft_pr = optional(bool, false)
     schedule_type       = optional(string, "every_day")

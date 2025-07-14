@@ -6,18 +6,15 @@ dbtcloud_host_url   = "https://cloud.getdbt.com"
 # Marketing project ID from platform team
 project_id = "102"
 
-# Marketing production environment from platform team
-# From dbt-cloud-admin output: marketing_environments.prod.environment_id
-environment_id = "302"
-
 team_name = "marketing-team"
 
 # Production Jobs - Mission-critical marketing analytics
 jobs = [
   # === CORE MARKETING MODELS ===
   {
-    name          = "attribution-production"
-    description   = "Production marketing attribution models"
+    name           = "attribution-production"
+    description    = "Production marketing attribution models"
+    environment_id = "311"  # marketing-prod environment
     execute_steps = [
       "dbt deps",
       "dbt run --select tag:attribution",
@@ -32,8 +29,9 @@ jobs = [
   },
   
   {
-    name          = "campaign-performance-production"
-    description   = "Production campaign performance tracking"
+    name           = "campaign-performance-production"
+    description    = "Production campaign performance tracking"
+    environment_id = "311"  # marketing-prod environment
     execute_steps = [
       "dbt run --select tag:campaigns",
       "dbt test --select tag:campaigns",
@@ -80,8 +78,9 @@ jobs = [
   
   # === CRITICAL DATA VALIDATION ===
   {
-    name          = "marketing-critical-tests"
-    description   = "Critical marketing data quality validation"
+    name           = "marketing-critical-tests"
+    description    = "Critical marketing data quality validation"
+    environment_id = "311"  # marketing-prod environment
     execute_steps = [
       "dbt test --select tag:critical",
       "dbt test --select tag:marketing_quality"
@@ -90,5 +89,37 @@ jobs = [
     schedule_hours = [9, 21]  # 9 AM and 9 PM
     job_type       = "daily"
     threads        = 2
+  },
+
+  # === EXAMPLE: MULTIPLE ENVIRONMENTS ===
+  # Jobs that run in different marketing environments
+  {
+    name           = "marketing-staging-validation"
+    description    = "Marketing staging environment validation"
+    environment_id = "212"  # marketing-staging environment
+    execute_steps = [
+      "dbt run --select tag:staging_validation",
+      "dbt test --select tag:staging_validation"
+    ]
+    schedule_type  = "every_day"
+    schedule_hours = [11]  # 11 AM - after prod jobs
+    job_type       = "daily"
+    threads        = 2
+  },
+
+  # Example of a specialized marketing environment
+  {
+    name           = "attribution-advanced"
+    description    = "Advanced attribution modeling in specialized environment"
+    environment_id = "312"  # marketing-attribution-special environment (if exists)
+    execute_steps = [
+      "dbt run --select tag:advanced_attribution",
+      "dbt test --select tag:advanced_attribution"
+    ]
+    schedule_type  = "every_day"
+    schedule_hours = [15]  # 3 PM
+    job_type       = "daily"
+    threads        = 8  # More resources for complex attribution
+    generate_docs  = true
   }
 ]
