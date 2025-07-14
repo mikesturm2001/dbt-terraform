@@ -1,0 +1,186 @@
+# GitLab CI/CD Pipeline for dbt Marketing Analytics Team
+# Hybrid approach: API for branch jobs, Terraform for production
+
+variables:
+  TEAM_NAME: "marketing-team"
+  PYTHON_VERSION: "3.9"
+
+stages:
+  - validate
+  - deploy-branch
+  - deploy-production
+  - cleanup
+
+# === VALIDATION STAGE ===
+validate-config:
+  stage: validate
+  image: python:${PYTHON_VERSION}-slim
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "🔍 Validating job configuration files..."
+    - python scripts/dbt_job_manager.py deploy --config env_file/dev_env.tfvars --dry-run
+    - echo "✅ Configuration validation passed"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+# === BRANCH DEPLOYMENT (API-based) ===
+deploy-branch-jobs:
+  stage: deploy-branch
+  image: python:${PYTHON_VERSION}-slim
+  variables:
+    # Use terraform-dev environment for all branch deployments
+    ENVIRONMENT_ID: "${TERRAFORM_DEV_ENVIRONMENT_ID}"
+    PROJECT_ID: "${DBTCLOUD_PROJECT_ID}"
+  before_script:
+    - pip install -r requirements.txt
+    - echo "🚀 Deploying branch jobs via dbt Cloud API..."
+    - echo "Branch: ${CI_COMMIT_REF_SLUG}"
+    - echo "User: ${GITLAB_USER_LOGIN}"
+    - echo "Environment: ${ENVIRONMENT_ID}"
+  script:
+    - python scripts/dbt_job_manager.py deploy --config env_file/dev_env.tfvars
+  after_script:
+    - echo "📋 Listing deployed jobs:"
+    - python scripts/dbt_job_manager.py list
+  rules:
+    # Deploy branch jobs for all non-production branches
+    - if: $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "master" && $CI_COMMIT_BRANCH != "production"
+  environment:
+    name: terraform-dev
+    url: ${DBTCLOUD_HOST_URL}
+
+# === PRODUCTION DEPLOYMENT (Terraform) ===
+terraform-plan-production:
+  stage: deploy-production
+  image: 
+    name: hashicorp/terraform:1.5
+    entrypoint: [""]
+  variables:
+    TF_VAR_dbtcloud_account_id: ${DBTCLOUD_ACCOUNT_ID}
+    TF_VAR_dbtcloud_token: ${DBTCLOUD_TOKEN}
+    TF_VAR_dbtcloud_host_url: ${DBTCLOUD_HOST_URL}
+  before_script:
+    - terraform --version
+    - terraform init
+  script:
+    - echo "📋 Planning production deployment with Terraform..."
+    - terraform plan -var-file="prod_env.tfvars" -out=tfplan
+    - terraform show -no-color tfplan
+  artifacts:
+    name: tfplan-${CI_COMMIT_SHA}
+    paths:
+      - tfplan
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "production"
+  environment:
+    name: production
+    action: prepare
+
+terraform-apply-production:
+  stage: deploy-production
+  image: 
+    name: hashicorp/terraform:1.5
+    entrypoint: [""]
+  variables:
+    TF_VAR_dbtcloud_account_id: ${DBTCLOUD_ACCOUNT_ID}
+    TF_VAR_dbtcloud_token: ${DBTCLOUD_TOKEN}
+    TF_VAR_dbtcloud_host_url: ${DBTCLOUD_HOST_URL}
+  dependencies:
+    - terraform-plan-production
+  before_script:
+    - terraform --version
+    - terraform init
+  script:
+    - echo "🚀 Applying production deployment with Terraform..."
+    - terraform apply -auto-approve tfplan
+    - echo "✅ Production jobs deployed successfully"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "production"
+      when: manual
+      allow_failure: false
+  environment:
+    name: production
+    url: ${DBTCLOUD_HOST_URL}
+
+# === CLEANUP STAGE ===
+cleanup-old-branch-jobs:
+  stage: cleanup
+  image: python:${PYTHON_VERSION}-slim
+  variables:
+    ENVIRONMENT_ID: "${TERRAFORM_DEV_ENVIRONMENT_ID}"
+    PROJECT_ID: "${DBTCLOUD_PROJECT_ID}"
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "🧹 Cleaning up branch jobs older than 7 days..."
+    - python scripts/dbt_job_manager.py cleanup --older-than 7
+    - echo "✅ Cleanup completed"
+  rules:
+    # Run cleanup on production branch pushes and scheduled pipelines
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "production"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  environment:
+    name: terraform-dev
+
+# === SCHEDULED CLEANUP ===
+# Configure this in GitLab CI/CD schedules to run daily at 2 AM
+scheduled-cleanup:
+  stage: cleanup
+  image: python:${PYTHON_VERSION}-slim
+  variables:
+    ENVIRONMENT_ID: "${TERRAFORM_DEV_ENVIRONMENT_ID}"
+    PROJECT_ID: "${DBTCLOUD_PROJECT_ID}"
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "🕐 Running scheduled cleanup of old branch jobs..."
+    - echo "📊 Dry run to show what would be deleted:"
+    - python scripts/dbt_job_manager.py cleanup --older-than 7 --dry-run
+    - echo "🧹 Performing actual cleanup:"
+    - python scripts/dbt_job_manager.py cleanup --older-than 7
+    - echo "📋 Current job status after cleanup:"
+    - python scripts/dbt_job_manager.py list --details
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  environment:
+    name: terraform-dev
+
+# === UTILITY JOBS ===
+list-all-jobs:
+  stage: validate
+  image: python:${PYTHON_VERSION}-slim
+  variables:
+    ENVIRONMENT_ID: "${TERRAFORM_DEV_ENVIRONMENT_ID}"
+    PROJECT_ID: "${DBTCLOUD_PROJECT_ID}"
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "📋 Listing all team jobs:"
+    - python scripts/dbt_job_manager.py list --details
+  rules:
+    - when: manual
+  environment:
+    name: terraform-dev
+
+# === DOCUMENTATION GENERATION ===
+generate-docs:
+  stage: validate
+  image: python:${PYTHON_VERSION}-slim
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "📚 Generating job deployment documentation..."
+    - python scripts/dbt_job_manager.py --help
+    - echo ""
+    - echo "📋 Current job configuration:"
+    - cat env_file/dev_env.tfvars
+  artifacts:
+    name: job-docs-${CI_COMMIT_SHA}
+    paths:
+      - env_file/*.tfvars
+    expire_in: 30 days
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"

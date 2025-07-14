@@ -1,0 +1,116 @@
+stages:
+  - validate
+  - plan
+  - apply
+
+variables:
+  TF_ROOT: ${CI_PROJECT_DIR}
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+cache:
+  key: "${TF_ROOT}"
+  paths:
+    - ${TF_ROOT}/.terraform
+
+before_script:
+  - cd ${TF_ROOT}
+  - terraform --version
+  - terraform init
+
+validate:
+  stage: validate
+  script:
+    - terraform validate
+    - terraform fmt -check
+  only:
+    - merge_requests
+    - branches
+
+plan:dev:
+  stage: plan
+  script:
+    - terraform plan -var-file="env_file/dev_env.tfvars" -out="planfile"
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/planfile
+    expire_in: 1 week
+  only:
+    - /^branch\/.*$/
+  environment:
+    name: dev
+    action: prepare
+
+plan:test:
+  stage: plan
+  script:
+    - terraform plan -var-file="env_file/test_env.tfvars" -out="planfile"
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/planfile
+    expire_in: 1 week
+  only:
+    - master
+  environment:
+    name: test
+    action: prepare
+
+plan:prod:
+  stage: plan
+  script:
+    - terraform plan -var-file="env_file/prod_env.tfvars" -out="planfile"
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/planfile
+    expire_in: 1 week
+  only:
+    - production
+  environment:
+    name: production
+    action: prepare
+
+apply:dev:
+  stage: apply
+  script:
+    - terraform apply -input=false "planfile"
+  dependencies:
+    - plan:dev
+  only:
+    - /^branch\/.*$/
+  environment:
+    name: dev
+    action: start
+  when: manual
+
+apply:test:
+  stage: apply
+  script:
+    - terraform apply -input=false "planfile"
+  dependencies:
+    - plan:test
+  only:
+    - master
+  environment:
+    name: test
+    action: start
+  when: manual
+
+apply:prod:
+  stage: apply
+  script:
+    - terraform apply -input=false "planfile"
+  dependencies:
+    - plan:prod
+  only:
+    - production
+  environment:
+    name: production
+    action: start
+  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH == "production"
+      when: manual
+      allow_failure: false
